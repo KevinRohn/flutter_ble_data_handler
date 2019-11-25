@@ -1,5 +1,6 @@
 part of flutter_ble_data_handler;
 
+/* Not used yet */
 class CRC8 {
   int crc8 = 0;
 
