@@ -16,6 +16,8 @@ class DataReceiver {
 
   Receiver _receiver;
 
+  /// Register a value Observer
+
   /// Adds and array of bytes [dataWithCheckBytes] to this handler.
   ///
   /// This takes care also to initialize the file when the
@@ -28,7 +30,8 @@ class DataReceiver {
     var currentTs = DateTime.now().millisecondsSinceEpoch;
     var deltaSeconds = (currentTs - _lastReadingTs) / 1000;
     _lastReadingTs = currentTs;
-    if (_receiver == null || deltaSeconds > TelegramConstants.MAX_TIMEINTERVAL_BETWEEN_EVENTS) {
+    if (_receiver == null ||
+        deltaSeconds > TelegramConstants.MAX_TIMEINTERVAL_BETWEEN_EVENTS) {
       // if new, get the right receiver and initialize it with the first chunk
       _receiver = Receiver.getReceiver(dataWithCheckBytes);
       if (_receiver != null) {
@@ -52,9 +55,11 @@ class DataReceiver {
 
   /// Dump the current data list into a file.
   void dump() {
+    print("dump was called");
     _receiver.dump();
     _receiver = null;
   }
+  
 }
 
 /// An abstract class that handles incoming data.
@@ -97,14 +102,18 @@ class CommandReceiver implements Receiver {
   int _runningChunkCount;
   int _totalLength;
   int _crc;
+  String _lastDump;
 
   @override
   bool init(List<int> bytesList) {
     if (bytesList.length < TelegramConstants.HEADER_SIZE_COMMANDS) {
-      throw ArgumentError("The header of commands has to be of at least ${TelegramConstants.HEADER_SIZE_COMMANDS} bytes.");
+      throw ArgumentError(
+          "The header of commands has to be of at least ${TelegramConstants.HEADER_SIZE_COMMANDS} bytes.");
     }
     if (DEBUG) {
-      print("COMMAND HEADER EVENT: " + String.fromCharCodes(bytesList.sublist(TelegramConstants.HEADER_SIZE_COMMANDS)));
+      print("COMMAND HEADER EVENT: " +
+          String.fromCharCodes(
+              bytesList.sublist(TelegramConstants.HEADER_SIZE_COMMANDS)));
     }
     _bytesMap = new SplayTreeMap();
     _totalLength = ByteConversionUtilities.getInt16(bytesList.sublist(3, 5));
@@ -119,7 +128,8 @@ class CommandReceiver implements Receiver {
       // >= because there might be padding
       //
       // command is shorter than an MTU, dump it directly.
-      dump();
+      // ToDo: I changed this to the abstract class to pass a Callback function    
+      dump();  
       return false;
     }
     return true;
@@ -132,7 +142,8 @@ class CommandReceiver implements Receiver {
     var crc8 = bytesList[1]; // TODO handle that at some point
 
     if (chunkIndex > _chunkCount + 1) {
-      print("ERROR with last chunk of index $chunkIndex: ${String.fromCharCodes(bytesList)}");
+      print(
+          "ERROR with last chunk of index $chunkIndex: ${String.fromCharCodes(bytesList)}");
       throw StateError("Something when wrong in the data stream.");
     }
 
@@ -155,12 +166,16 @@ class CommandReceiver implements Receiver {
     String stringCommand = String.fromCharCodes(commandBytes).trim();
 
     if (stringCommand.length != _totalLength) {
-      throw StateError("ERROR: Recovered data differs from expected data size (${stringCommand.length} vs $_totalLength). Will not dump.");
+      throw StateError(
+          "ERROR: Recovered data differs from expected data size (${stringCommand.length} vs $_totalLength). Will not dump.");
     }
 
     // Kevin -> implement here command consuming
     print("Command: " + stringCommand);
+    _lastDump = stringCommand;
   }
+
+
 }
 
 /// A singleton that takes care of receiving file data.
@@ -183,16 +198,20 @@ class FileReceiver implements Receiver {
   @override
   bool init(List<int> bytesList) {
     if (bytesList.length < TelegramConstants.HEADER_SIZE_FILES) {
-      throw ArgumentError("The header of files has to be of at least ${TelegramConstants.HEADER_SIZE_FILES} bytes.");
+      throw ArgumentError(
+          "The header of files has to be of at least ${TelegramConstants.HEADER_SIZE_FILES} bytes.");
     }
     if (DEBUG) {
-      print("FILE HEADER EVENT: " + String.fromCharCodes(bytesList.sublist(TelegramConstants.HEADER_SIZE_FILES)));
+      print("FILE HEADER EVENT: " +
+          String.fromCharCodes(
+              bytesList.sublist(TelegramConstants.HEADER_SIZE_FILES)));
     }
     _bytesMap = new SplayTreeMap();
     _totalLength = ByteConversionUtilities.getInt32(bytesList.sublist(3, 7));
     _chunkCount = ByteConversionUtilities.getInt32(bytesList.sublist(7, 11));
     _md5 = String.fromCharCodes(bytesList.sublist(11, 43));
-    _fileName = String.fromCharCodes(bytesList.sublist(43, TelegramConstants.HEADER_SIZE_FILES));
+    _fileName = String.fromCharCodes(
+        bytesList.sublist(43, TelegramConstants.HEADER_SIZE_FILES));
     _fileName = _fileName.trim();
 
     var dataBytes = bytesList.sublist(TelegramConstants.HEADER_SIZE_FILES);
@@ -214,7 +233,8 @@ class FileReceiver implements Receiver {
     _runningChunkCount++;
     var chunkIndex = ByteConversionUtilities.getInt32(bytesList.sublist(0, 4));
     if (chunkIndex > _chunkCount + 1) {
-      print("ERROR with last chunk of index $chunkIndex: ${String.fromCharCodes(bytesList)}");
+      print(
+          "ERROR with last chunk of index $chunkIndex: ${String.fromCharCodes(bytesList)}");
       throw StateError("Something when wrong in the data stream.");
     }
 
@@ -240,100 +260,27 @@ class FileReceiver implements Receiver {
     String md5hash = md5.convert(fileBytesNoPadding).toString();
 
     if (md5hash != _md5) {
-      print("ERROR: The checksum of the file doesn't equal the one declared in the package. Will not dump to file.");
+      print(
+          "ERROR: The checksum of the file doesn't equal the one declared in the package. Will not dump to file.");
       return;
     }
 
     // Kevin, here substitute your file handling.
     String filePath = TestData.TEST_BASEPATH + _fileName;
-    String writtenPath = ByteConversionUtilities.bytesToFile(filePath, fileBytesNoPadding);
+    String writtenPath =
+        ByteConversionUtilities.bytesToFile(filePath, fileBytesNoPadding);
     print("DUMPED DATA TO: " + writtenPath);
   }
+
 }
 
 /// Exception to identify sending of simultaneous messages.
 class SingleSendingException implements Exception {
-  String toString() => "SingleSendingException: an attempt was made to send a message while the queue il locked.";
-}
-
-/// Class to handle int conversions.
-class ByteConversionUtilities {
-  /// Convert a 32 bit integer [number] to its int representation.
-  static List<int> bytesFromInt32(int number) {
-    var tmp = Uint8List.fromList([0, 0, 0, 0]);
-    ByteData bdata = ByteData.view(tmp.buffer);
-    bdata.setInt32(0, number);
-    return tmp;
-  }
-
-  /// Convert a 16 bit integer [number] to its int representation.
-  static List<int> bytesFromInt16(int number) {
-    var tmp = Uint8List.fromList([0, 0]);
-    ByteData bdata = ByteData.view(tmp.buffer);
-    bdata.setInt16(0, number);
-    return tmp;
-  }
-
-  /// Get an int from a list of 4 bytes.
-  static int getInt32(Uint8List list) {
-    var bdata = new ByteData.view(list.buffer);
-    return bdata.getInt32(0);
-  }
-
-  /// Get an int from a list of 2 bytes.
-  static int getInt16(Uint8List list) {
-    var bdata = new ByteData.view(list.buffer);
-    return bdata.getInt16(0);
-  }
-
-  /// Get an int from a list of 1 byte.
-  static int getInt8(Uint8List list) {
-    var bdata = new ByteData.view(list.buffer);
-    return bdata.getInt8(0);
-  }
-
-  /// Read a file from [path] into a bytes list.
-  static Uint8List bytesFromFile(String path) {
-    File outputFile = File(path);
-    return outputFile.readAsBytesSync();
-  }
-
-  /// Write a list of [bytes] to file and return the written file [path].
-  static String bytesToFile(String path, List<int> bytes) {
-    File outputFile = File(path);
-    outputFile.writeAsBytesSync(bytes);
-    return outputFile.path;
-  }
-
-  /// Convert a [name] into a list of bytes.
-  static List<int> nameToBytes(String fileName) {
-    int maxNameLength = TelegramConstants.FILE_NAME_LENGTH;
-    if (fileName.length > maxNameLength) {
-      fileName = fileName.substring(0, maxNameLength);
-    } else if (fileName.length < maxNameLength) {
-      int padding = maxNameLength - fileName.length;
-
-      for (int i = 0; i < padding; i++) {
-        fileName += " ";
-      }
-    }
-    return fileName.codeUnits;
-  }
-
-  static void addPadding(List<int> data, int requiredSize) {
-    if (data.length < requiredSize) {
-      // add padding to complete the mtu
-      var add = requiredSize - data.length;
-      for (int i = 0; i < add; i++) {
-        data.add(0);
-      }
-    }
-  }
+  String toString() =>
+      "SingleSendingException: an attempt was made to send a message while the queue il locked.";
 }
 
 /// Class that handles sending of data through a bluetooth connection (via its characteristics).
-///
-/// At the moment sending of files
 class DataSender {
   DataSender._();
 
@@ -344,7 +291,8 @@ class DataSender {
   /// Variable to make sure sendings do not overlap.
   bool _isSending = false;
 
-  static const mtuErrorMsg = "The MTU can't be smaller than the header size. The header need to be sent in a sigle message.";
+  static const mtuErrorMsg =
+      "The MTU can't be smaller than the header size. The header need to be sent in a sigle message.";
 
   /// Send a file defined by the [filePath] through a given [bluetoothCharacteristic].
   ///
@@ -360,7 +308,10 @@ class DataSender {
   /// Throws a [SingleSendingException] if a sending is already ongoing.
   /// Throws [ArgumentError] if the supplied [mtu] is smaller than the [HEADER_SIZE].
   Future<void> sendFile(dynamic bluetoothCharacteristic, String filePath,
-      {mtu = TelegramConstants.DEFAULT_TELEGRAM_MTU, sendingCallback, chunkCountCallback, totalCountCallback}) async {
+      {mtu = TelegramConstants.DEFAULT_TELEGRAM_MTU,
+      sendingCallback,
+      chunkCountCallback,
+      totalCountCallback}) async {
     if (_isSending) {
       throw SingleSendingException();
     }
@@ -381,24 +332,28 @@ class DataSender {
 
       // totalsize
       var fileBytesLength = fileBytes.length;
-      List<int> totalSizeBytes = ByteConversionUtilities.bytesFromInt32(fileBytesLength);
+      List<int> totalSizeBytes =
+          ByteConversionUtilities.bytesFromInt32(fileBytesLength);
 
       // chunks
       if (DEBUG) print("Used MTU = $mtu");
-      int chunkMaxDataSize = mtu - 4; // chunk size minus the chunk index, a 32bit integer.
+      int chunkMaxDataSize =
+          mtu - 4; // chunk size minus the chunk index, a 32bit integer.
 
       // calculate chunk counts, considering that the first has no index, but any other chunk does
       // hence [chunkMaxDataSize] is used.
       int chunkCount = 1;
       int runningSize = mtu;
-      while (runningSize < fileBytesLength + TelegramConstants.HEADER_SIZE_FILES) {
+      while (
+          runningSize < fileBytesLength + TelegramConstants.HEADER_SIZE_FILES) {
         runningSize += chunkMaxDataSize;
         chunkCount++;
       }
 
       if (totalCountCallback != null) totalCountCallback(chunkCount);
 
-      List<int> chunkCountBytes = ByteConversionUtilities.bytesFromInt32(chunkCount);
+      List<int> chunkCountBytes =
+          ByteConversionUtilities.bytesFromInt32(chunkCount);
 
       List<int> nameBytes = ByteConversionUtilities.nameToBytes(fileName);
 
@@ -421,7 +376,8 @@ class DataSender {
       int runningListIndex = addToHeaderSizeSafe;
       int runningChunkIndex = 1;
       while (runningChunkIndex < chunkCount) {
-        List<int> indexBytes = ByteConversionUtilities.bytesFromInt32(runningChunkIndex);
+        List<int> indexBytes =
+            ByteConversionUtilities.bytesFromInt32(runningChunkIndex);
         var from = runningListIndex;
         var to = runningListIndex + chunkMaxDataSize;
         if (to > fileBytesLength) {
@@ -462,7 +418,10 @@ class DataSender {
   /// Throws a [SingleSendingException] if a sending is already ongoing.
   /// Throws [ArgumentError] if the supplied [mtu] is smaller than the [HEADER_SIZE].
   Future<void> sendCommand(dynamic bluetoothCharacteristic, String command,
-      {mtu = TelegramConstants.DEFAULT_TELEGRAM_MTU, sendingCallback, chunkCountCallback, totalCountCallback}) async {
+      {mtu = TelegramConstants.DEFAULT_TELEGRAM_MTU,
+      sendingCallback,
+      chunkCountCallback,
+      totalCountCallback}) async {
     if (_isSending) {
       throw SingleSendingException();
     }
@@ -478,23 +437,27 @@ class DataSender {
 
       // totalsize, 16 bits is enough
       var commandBytesLength = command.length;
-      List<int> totalSizeBytes16 = ByteConversionUtilities.bytesFromInt16(commandBytesLength);
+      List<int> totalSizeBytes16 =
+          ByteConversionUtilities.bytesFromInt16(commandBytesLength);
 
       if (DEBUG) print("Used MTU = $mtu");
-      int chunkMaxDataSize = mtu - 3; // chunk size minus the chunk index (an 8 bit integer) adn the crc8.
+      int chunkMaxDataSize = mtu -
+          3; // chunk size minus the chunk index (an 8 bit integer) adn the crc8.
 
       // calculate chunk counts, considering that the first has no index, but any other chunk does
       // hence [chunkMaxDataSize] is used.
       int chunkCount = 1;
       int runningSize = mtu;
-      while (runningSize < commandBytesLength + TelegramConstants.HEADER_SIZE_COMMANDS) {
+      while (runningSize <
+          commandBytesLength + TelegramConstants.HEADER_SIZE_COMMANDS) {
         runningSize += chunkMaxDataSize;
         chunkCount++;
       }
 
       if (chunkCount > 255) {
         if (totalCountCallback != null) totalCountCallback(chunkCount);
-        throw ArgumentError("The length of the command and the choice of the MTU are not allowed to produce more than 255 chunk.");
+        throw ArgumentError(
+            "The length of the command and the choice of the MTU are not allowed to produce more than 255 chunk.");
       }
 
       List<int> headerBytes = []
@@ -577,6 +540,11 @@ class TestData {
       "\$S\$1\$2\$4\$AAAAAAAAAA-AAAAAAAAAABBBBBBBBBB-BBBBBBBBBBCCCCCCCCCC-CCCCCCCCCCDDDDDDDDDD-DDDDDDDDDDEEEEEEEEEE-EEEEEEEEEEFFFFFFFFFF-FFFFFFFFFFGGGGGGGGGG-GGGGGGGGGGHHHHHHHHHH-HHHHHHHHHHIIIIIIIIII-IIIIIIIIIIJJJJJJJJJJ-JJJJJJJJJJKKKKKKKKKK-KKKKKKKKKKLLLLLLLLLL-LLLLLLLLLLMMMMMMMMMM-MMMMMMMMMMNNNNNNNNNN-NNNNNNNNNNOOOOOOOOOO-OOOOOOOOOOPPPPPPPPPP-PPPPPPPPPPQQQQQQQQQQ-QQQQQQQQQQRRRRRRRRRR-RRRRRRRRRRSSSSSSSSSS-SSSSSSSSSS\$E\$";
 }
 
+
+/// Class Data Handler 
+class BleDataHandler {
+
+}
 /// Class to help with UI updating and streams.
 class UpdateHandler {
   UpdateHandler._();
@@ -584,6 +552,9 @@ class UpdateHandler {
   static UpdateHandler _instance = new UpdateHandler._();
 
   static UpdateHandler get instance => _instance;
+
+  BehaviorSubject<String> _value = BehaviorSubject.seeded("");
+  Stream<String> get value => _value.stream;
 
   BehaviorSubject<bool> _isSending = BehaviorSubject.seeded(false);
 
@@ -596,6 +567,10 @@ class UpdateHandler {
   int _totalChunkCount = 0;
 
   int get totalChunkCount => _totalChunkCount;
+
+  Function valueObserver(String value) {
+    _value.add(value);
+  }
 
   Function sendingCallback(bool value) {
     _isSending.add(value);

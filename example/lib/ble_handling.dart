@@ -90,11 +90,14 @@ class BleHandling {
   void onDataStreamDone() {
     print("DONE CALLED");
   }
+  
 
+  DataReceiver dataReceiver = DataReceiver();
+  BleDataHandler dataHandler = BleDataHandler();
+  
   // Callback function to parse data
   Future<void> listenToDataStream(List<int> data) async {
     // needs to be more than 4 to be a data message
-    DataReceiver dataReceiver = DataReceiver();
     if (!dataReceiver.onDataEvent(data)) {
       // data all arrived, we can dump
       dataReceiver.dump();
@@ -102,6 +105,11 @@ class BleHandling {
     } else {
       // debug to screen
       _allDataOnStream.add("Loading data...");
+      //print("LOADING");
     }
+  }
+
+  String myData() {
+
   }
 }
