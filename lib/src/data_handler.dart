@@ -359,7 +359,7 @@ class DataSender {
   ///
   /// Throws a [SingleSendingException] if a sending is already ongoing.
   /// Throws [ArgumentError] if the supplied [mtu] is smaller than the [HEADER_SIZE].
-  Future<void> sendFile(BluetoothCharacteristic bluetoothCharacteristic, String filePath,
+  Future<void> sendFile(dynamic bluetoothCharacteristic, String filePath,
       {mtu = TelegramConstants.DEFAULT_TELEGRAM_MTU, sendingCallback, chunkCountCallback, totalCountCallback}) async {
     if (_isSending) {
       throw SingleSendingException();
@@ -461,7 +461,7 @@ class DataSender {
   ///
   /// Throws a [SingleSendingException] if a sending is already ongoing.
   /// Throws [ArgumentError] if the supplied [mtu] is smaller than the [HEADER_SIZE].
-  Future<void> sendCommand(BluetoothCharacteristic bluetoothCharacteristic, String command,
+  Future<void> sendCommand(dynamic bluetoothCharacteristic, String command,
       {mtu = TelegramConstants.DEFAULT_TELEGRAM_MTU, sendingCallback, chunkCountCallback, totalCountCallback}) async {
     if (_isSending) {
       throw SingleSendingException();
