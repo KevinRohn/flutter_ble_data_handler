@@ -579,11 +579,11 @@ class TestData {
 
 /// Class to help with UI updating and streams.
 class UpdateHandler {
-  UpdateHandler._();
+  //UpdateHandler._();
 
-  static UpdateHandler _instance = new UpdateHandler._();
+  //static UpdateHandler _instance = new UpdateHandler._();
 
-  static UpdateHandler get instance => _instance;
+  //static UpdateHandler get instance => _instance;
 
   BehaviorSubject<bool> _isSending = BehaviorSubject.seeded(false);
 

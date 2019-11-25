@@ -1,6 +1,6 @@
 name: flutter_ble_data_handler
-description: A new Flutter package project.
-version: 0.1.0
+description: A flutter package to handle bluetooth low energy data transmission.
+version: 0.1.1
 author: 
 homepage:
 
