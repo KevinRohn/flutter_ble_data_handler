@@ -1,7 +1,7 @@
 # flutter_ble_data_handler
 
 Flutter package which handles data packages to use with bluetooth low energy.
-It splitts data into chunks passed on the MTU size. 
+It splitts data into chunks based on the MTU size. 
 
 
 ## Note
