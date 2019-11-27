@@ -57,13 +57,6 @@ class BleHandling {
     _dataIsReady.add(false);
   }
 
-  /// Write TX data
-  Future<void> writeTXData() async {
-    String testString = "\$S\$R\$INIT\$0\$+\$\$E\$\n";
-    List<int> sendbytes = utf8.encode(testString);
-    _txCharacteristic.write(sendbytes);
-  }
-
   Future<void> sendFile() async {
     await DataSender.instance.sendFile(_txCharacteristic, null, // null will be path here
         sendingCallback: UpdateHandler.instance.sendingCallback,

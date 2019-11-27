@@ -1,6 +1,6 @@
 part of flutter_ble_data_handler;
 
-const DEBUG = true;
+const DEBUG = false;
 
 /// A singleton that takes care of receiving data and dump them.
 class DataReceiver {
@@ -171,7 +171,7 @@ class CommandReceiver implements Receiver {
     }
 
     // Kevin -> implement here command consuming
-    print("Command: " + stringCommand);
+    UpdateHandler.instance.updateDumpedValue(stringCommand);
     _lastDump = stringCommand;
   }
 
@@ -553,6 +553,9 @@ class UpdateHandler {
 
   static UpdateHandler get instance => _instance;
 
+  BehaviorSubject<String> _dumpedValue = BehaviorSubject.seeded("");
+  Stream<String> get dumpedValue => _dumpedValue.stream; 
+
   BehaviorSubject<String> _value = BehaviorSubject.seeded("");
   Stream<String> get value => _value.stream;
 
@@ -582,5 +585,9 @@ class UpdateHandler {
 
   Function totalCountCallback(int value) {
     _totalChunkCount = value;
+  }
+
+  Function updateDumpedValue(String value) {
+    _dumpedValue.add(value);
   }
 }

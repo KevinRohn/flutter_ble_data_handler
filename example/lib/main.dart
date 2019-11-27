@@ -134,6 +134,20 @@ class _ShowDataState extends State<ShowData> {
               },
             ),
           ),
+          Container(
+            child: StreamBuilder(
+              stream: UpdateHandler.instance.dumpedValue,
+              initialData: "",
+              builder: (c, snapshot) {
+                if (snapshot.hasData) {
+                  return Text("${snapshot.data}");
+                   
+                } else {
+                  return Container();
+                }
+              },
+            ),
+          ),
         ],
       ),
     );
