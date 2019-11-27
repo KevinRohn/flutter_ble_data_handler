@@ -6,7 +6,6 @@ import 'package:rxdart/rxdart.dart';
 import 'package:flutter_ble_data_handler/handler.dart';
 
 class BleHandling {
-
   Stream<bool> get dataIsReady => _dataIsReady.stream;
 
   Stream<String> get allDataOnStream => _allDataOnStream;
@@ -15,7 +14,8 @@ class BleHandling {
 
   BehaviorSubject<bool> _dataIsReady = BehaviorSubject.seeded(false);
 
-  final StreamController<List<int>> _onDataReceivedController = StreamController<List<int>>.broadcast();
+  final StreamController<List<int>> _onDataReceivedController =
+      StreamController<List<int>>.broadcast();
 
   Stream<List<int>> get onDataReceived => _onDataReceivedController.stream;
 
@@ -35,14 +35,18 @@ class BleHandling {
   Future<void> registerUARTServices(BluetoothDevice device) async {
     device.discoverServices().then((services) {
       services.forEach((service) {
-        if (service.uuid.toString().toLowerCase() == uartServiceUUID.toLowerCase()) {
+        if (service.uuid.toString().toLowerCase() ==
+            uartServiceUUID.toLowerCase()) {
           service.characteristics.forEach((characteristic) {
-            if (characteristic.uuid.toString().toLowerCase() == uartTXCharUUID.toLowerCase()) {
+            if (characteristic.uuid.toString().toLowerCase() ==
+                uartTXCharUUID.toLowerCase()) {
               _txCharacteristic = characteristic;
-            } else if (characteristic.uuid.toString().toLowerCase() == uartRXCharUUID.toLowerCase()) {
+            } else if (characteristic.uuid.toString().toLowerCase() ==
+                uartRXCharUUID.toLowerCase()) {
               _rxCharacteristic = characteristic;
               _rxCharacteristic.setNotifyValue(true);
-              _rxCharacteristic.value.listen(listenToDataStream, onError: onDataStreamError, onDone: onDataStreamDone);
+              _rxCharacteristic.value.listen(listenToDataStream,
+                  onError: onDataStreamError, onDone: onDataStreamDone);
               _dataIsReady.add(true);
             }
           });
@@ -58,17 +62,19 @@ class BleHandling {
   }
 
   Future<void> sendFile() async {
-    await DataSender.instance.sendFile(_txCharacteristic, null, // null will be path here
-        sendingCallback: UpdateHandler.instance.sendingCallback,
-        chunkCountCallback: UpdateHandler.instance.chunkCountCallback,
-        totalCountCallback: UpdateHandler.instance.totalCountCallback);
+    await DataSender.instance
+        .sendFile(_txCharacteristic, null, // null will be path here
+            sendingCallback: UpdateHandler.instance.sendingCallback,
+            chunkCountCallback: UpdateHandler.instance.chunkCountCallback,
+            totalCountCallback: UpdateHandler.instance.totalCountCallback);
   }
 
   Future<void> sendCommand() async {
-    await DataSender.instance.sendCommand(_txCharacteristic, null, // null will be command here
-        sendingCallback: UpdateHandler.instance.sendingCallback,
-        chunkCountCallback: UpdateHandler.instance.chunkCountCallback,
-        totalCountCallback: UpdateHandler.instance.totalCountCallback);
+    await DataSender.instance
+        .sendCommand(_txCharacteristic, null, // null will be command here
+            sendingCallback: UpdateHandler.instance.sendingCallback,
+            chunkCountCallback: UpdateHandler.instance.chunkCountCallback,
+            totalCountCallback: UpdateHandler.instance.totalCountCallback);
   }
 
   void onDataStreamError(error, StackTrace stackTrace) {
@@ -83,11 +89,9 @@ class BleHandling {
   void onDataStreamDone() {
     print("DONE CALLED");
   }
-  
 
   DataReceiver dataReceiver = DataReceiver();
-  BleDataHandler dataHandler = BleDataHandler();
-  
+
   // Callback function to parse data
   Future<void> listenToDataStream(List<int> data) async {
     // needs to be more than 4 to be a data message
@@ -98,11 +102,7 @@ class BleHandling {
     } else {
       // debug to screen
       _allDataOnStream.add("Loading data...");
-      //print("LOADING");
     }
-  }
-
-  String myData() {
 
   }
 }

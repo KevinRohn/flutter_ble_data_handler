@@ -16,8 +16,6 @@ class DataReceiver {
 
   Receiver _receiver;
 
-  /// Register a value Observer
-
   /// Adds and array of bytes [dataWithCheckBytes] to this handler.
   ///
   /// This takes care also to initialize the file when the
@@ -59,7 +57,6 @@ class DataReceiver {
     _receiver.dump();
     _receiver = null;
   }
-  
 }
 
 /// An abstract class that handles incoming data.
@@ -93,6 +90,7 @@ abstract class Receiver {
 
   /// Dumps the retrieved data to the next processing chain.
   void dump();
+
 }
 
 /// A singleton that takes care of receiving command data.
@@ -128,8 +126,8 @@ class CommandReceiver implements Receiver {
       // >= because there might be padding
       //
       // command is shorter than an MTU, dump it directly.
-      // ToDo: I changed this to the abstract class to pass a Callback function    
-      dump();  
+      // ToDo: I changed this to the abstract class to pass a Callback function
+      dump();
       return false;
     }
     return true;
@@ -174,7 +172,6 @@ class CommandReceiver implements Receiver {
     UpdateHandler.instance.updateDumpedValue(stringCommand);
     _lastDump = stringCommand;
   }
-
 
 }
 
@@ -265,13 +262,12 @@ class FileReceiver implements Receiver {
       return;
     }
 
-    // Kevin, here substitute your file handling.
+    // ToDo: Here substitute your file handling.
     String filePath = TestData.TEST_BASEPATH + _fileName;
     String writtenPath =
         ByteConversionUtilities.bytesToFile(filePath, fileBytesNoPadding);
     print("DUMPED DATA TO: " + writtenPath);
   }
-
 }
 
 /// Exception to identify sending of simultaneous messages.
@@ -540,54 +536,48 @@ class TestData {
       "\$S\$1\$2\$4\$AAAAAAAAAA-AAAAAAAAAABBBBBBBBBB-BBBBBBBBBBCCCCCCCCCC-CCCCCCCCCCDDDDDDDDDD-DDDDDDDDDDEEEEEEEEEE-EEEEEEEEEEFFFFFFFFFF-FFFFFFFFFFGGGGGGGGGG-GGGGGGGGGGHHHHHHHHHH-HHHHHHHHHHIIIIIIIIII-IIIIIIIIIIJJJJJJJJJJ-JJJJJJJJJJKKKKKKKKKK-KKKKKKKKKKLLLLLLLLLL-LLLLLLLLLLMMMMMMMMMM-MMMMMMMMMMNNNNNNNNNN-NNNNNNNNNNOOOOOOOOOO-OOOOOOOOOOPPPPPPPPPP-PPPPPPPPPPQQQQQQQQQQ-QQQQQQQQQQRRRRRRRRRR-RRRRRRRRRRSSSSSSSSSS-SSSSSSSSSS\$E\$";
 }
 
-
-/// Class Data Handler 
-class BleDataHandler {
-
-}
-/// Class to help with UI updating and streams.
+/// Class to help with updating streams. (Singletone)
 class UpdateHandler {
   UpdateHandler._();
 
   static UpdateHandler _instance = new UpdateHandler._();
-
   static UpdateHandler get instance => _instance;
 
   BehaviorSubject<String> _dumpedValue = BehaviorSubject.seeded("");
-  Stream<String> get dumpedValue => _dumpedValue.stream; 
-
-  BehaviorSubject<String> _value = BehaviorSubject.seeded("");
-  Stream<String> get value => _value.stream;
-
+  BehaviorSubject<int> _chunkCount = BehaviorSubject.seeded(0);
   BehaviorSubject<bool> _isSending = BehaviorSubject.seeded(false);
+  int _totalChunkCount = 0;
+  String _lastDumpedValue;
 
+  /// The stream is updated if a Message data is completly dumped
+  Stream<String> get dumpedValue => _dumpedValue.stream;
+
+  /// Returns the last dumped value
+  String get lastDumpedValue => _lastDumpedValue;
+
+  /// The stream returns the current state of the send process
   Stream<bool> get isSending => _isSending.stream;
 
-  BehaviorSubject<int> _chunkCount = BehaviorSubject.seeded(0);
-
+  /// The stream returns the current chunk if there is a send process
   Stream<int> get chunkCount => _chunkCount.stream;
 
-  int _totalChunkCount = 0;
-
+  /// The value returns the total count of chunks
   int get totalChunkCount => _totalChunkCount;
 
-  Function valueObserver(String value) {
-    _value.add(value);
-  }
-
-  Function sendingCallback(bool value) {
+  sendingCallback(bool value) {
     _isSending.add(value);
   }
 
-  Function chunkCountCallback(int value) {
+  chunkCountCallback(int value) {
     _chunkCount.add(value);
   }
 
-  Function totalCountCallback(int value) {
+  totalCountCallback(int value) {
     _totalChunkCount = value;
   }
 
-  Function updateDumpedValue(String value) {
+  updateDumpedValue(String value) {
     _dumpedValue.add(value);
+    _lastDumpedValue = value;
   }
 }

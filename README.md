@@ -42,6 +42,7 @@ It splitts data into chunks based on the MTU size.
 **limitations**:
 - filename size is limited to 41 bytes (enough for UUID v4)
 - transfer rate (155 byte each package)
+- Message data mode is limited to a maximum of 255 chunks
 
 ### visual telegram 
 
