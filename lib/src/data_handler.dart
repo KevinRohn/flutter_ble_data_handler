@@ -543,6 +543,8 @@ class UpdateHandler {
   static UpdateHandler _instance = new UpdateHandler._();
   static UpdateHandler get instance => _instance;
 
+  StreamController<String> streamController = new StreamController();
+
   BehaviorSubject<String> _dumpedValue = BehaviorSubject.seeded("");
   BehaviorSubject<int> _chunkCount = BehaviorSubject.seeded(0);
   BehaviorSubject<bool> _isSending = BehaviorSubject.seeded(false);
@@ -580,4 +582,5 @@ class UpdateHandler {
     _dumpedValue.add(value);
     _lastDumpedValue = value;
   }
+
 }

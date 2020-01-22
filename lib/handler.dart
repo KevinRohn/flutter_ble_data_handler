@@ -1,10 +1,10 @@
 library flutter_ble_data_handler;
 
+import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
-
 
 import 'package:flutter/material.dart';
 import 'package:rxdart/rxdart.dart';

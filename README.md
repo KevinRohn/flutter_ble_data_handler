@@ -1,14 +1,16 @@
 # flutter_ble_data_handler
 
-Flutter package which handles data packages to use with bluetooth low energy.
-It splitts data into chunks based on the MTU size. 
+Flutter package which handles data packages to use with bluetooth low energy (BLE).
+It splitts data into chunks based on the MTU size. So you don't need to worry about 
+splitting and joining data packages on lower level. 
 
+The package works in combination with the flutter_blue package, which is used for BLE communication
 
-## Note
+**Note**:
+This package is still in work, so please be aware of breaking changes.
 
-- This package is still in work, so please be aware of breaking changes. 
-- An example for receiver/sender side written in node.js is comming soon.
-
+**Requirements for development**
+To get started using this package to communicate with a raspberry Pi and Flutter, 
 
 ## Telegram
 
