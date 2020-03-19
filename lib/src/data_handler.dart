@@ -437,8 +437,9 @@ class DataSender {
           ByteConversionUtilities.bytesFromInt16(commandBytesLength);
 
       if (DEBUG) print("Used MTU = $mtu");
-      int chunkMaxDataSize = mtu -
-          3; // chunk size minus the chunk index (an 8 bit integer) adn the crc8.
+//      int chunkMaxDataSize = mtu -
+//          3; // chunk size minus the chunk index (an 8 bit integer) adn the crc8.
+      int chunkMaxDataSize = mtu;
 
       // calculate chunk counts, considering that the first has no index, but any other chunk does
       // hence [chunkMaxDataSize] is used.
@@ -465,16 +466,16 @@ class DataSender {
       int addToHeaderSizeSafe = math.min(addToHeaderSize, commandBytesLength);
 
       List<int> commandBytes = command.codeUnits;
+      int commandCrc8 = Crc8Atm().convert(commandBytes);
       // send fist one with header
       //
       // First chunk will be: 3 bytes $S$ + 2 bytes totalsize + 1 int chunkCount + 1 int crc8 + data piece that fits
       var sublist = commandBytes.sublist(0, addToHeaderSizeSafe);
-      int crc8 = Crc8Atm().convert(sublist);
       List<int> chunk1Bytes = []
         ..addAll(headerBytes)
-        ..add(crc8)
+        ..add(commandCrc8)
         ..addAll(sublist);
-      ByteConversionUtilities.addPadding(chunk1Bytes, mtu);
+      //ByteConversionUtilities.addPadding(chunk1Bytes, mtu);
       print(chunk1Bytes);
       await bluetoothCharacteristic.write(chunk1Bytes, withoutResponse: false);
 
@@ -492,17 +493,13 @@ class DataSender {
         var sublist = commandBytes.sublist(from, to);
         runningListIndex = runningListIndex + chunkMaxDataSize;
 
-        int crc8 = Crc8Atm().convert(sublist);
-
 //        CRC8 tmp = CRC8();
 //        tmp.setList(sublist);
 //        var value = tmp.getValue();
 
         List<int> chunkBytes = []
-          ..add(runningChunkIndex)
-          ..add(crc8)
           ..addAll(sublist);
-        ByteConversionUtilities.addPadding(chunkBytes, mtu);
+        //ByteConversionUtilities.addPadding(chunkBytes, mtu);
 
         chunkString = new String.fromCharCodes(chunkBytes);
         print(chunkString);
@@ -541,6 +538,7 @@ class TestData {
       "\$S\$1\$2\$4\$AAAAAAAAAABBBBBBBBBBCCCCCCCCCCDDDDDDDDDDEEEEEEEEEEFFFFFFFFFFGGGGGGGGGGHHHHHHHHHHIIIIIIIIIIJJJJJJJJJJKKKKKKKKKKLLLLLLLLLLMMMMMMMMMMNNNNNNNNNNOOOOOOOOOOPPPPPPPPPPQQQQQQQQQQ\$E\$";
   static const COMMAND_411BYTES =
       "\$S\$1\$2\$4\$AAAAAAAAAA-AAAAAAAAAABBBBBBBBBB-BBBBBBBBBBCCCCCCCCCC-CCCCCCCCCCDDDDDDDDDD-DDDDDDDDDDEEEEEEEEEE-EEEEEEEEEEFFFFFFFFFF-FFFFFFFFFFGGGGGGGGGG-GGGGGGGGGGHHHHHHHHHH-HHHHHHHHHHIIIIIIIIII-IIIIIIIIIIJJJJJJJJJJ-JJJJJJJJJJKKKKKKKKKK-KKKKKKKKKKLLLLLLLLLL-LLLLLLLLLLMMMMMMMMMM-MMMMMMMMMMNNNNNNNNNN-NNNNNNNNNNOOOOOOOOOO-OOOOOOOOOOPPPPPPPPPP-PPPPPPPPPPQQQQQQQQQQ-QQQQQQQQQQRRRRRRRRRR-RRRRRRRRRRSSSSSSSSSS-SSSSSSSSSS\$E\$";
+
 }
 
 /// Class to help with updating streams. (Singletone)
