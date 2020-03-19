@@ -1,13 +1,9 @@
 PODS:
-  - "!ProtoCompiler (3.8.0)":
-    - Protobuf (~> 3.0)
   - Flutter (1.0.0)
   - flutter_blue (0.0.1):
-    - "!ProtoCompiler"
     - Flutter
     - flutter_blue/Protos (= 0.0.1)
   - flutter_blue/Protos (0.0.1):
-    - "!ProtoCompiler"
     - Flutter
     - Protobuf
   - permission_handler (3.2.2):
@@ -21,7 +17,6 @@ DEPENDENCIES:
 
 SPEC REPOS:
   https://github.com/cocoapods/specs.git:
-    - "!ProtoCompiler"
     - Protobuf
 
 EXTERNAL SOURCES:
@@ -33,9 +28,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/permission_handler/ios"
 
 SPEC CHECKSUMS:
-  "!ProtoCompiler": 7fc49078ec544d0347264496f6cd09b8132536b5
   Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
-  flutter_blue: 4bee6736f3a986a822939e02ca5396fe2e4fca9f
+  flutter_blue: be3f2be2f5fda254d174896c0738b2fcb6b1073e
   permission_handler: d59f41439f5bc6c4d1005f3355e98f05ddc68ece
   Protobuf: a4dc852ad69c027ca2166ed287b856697814375b
 

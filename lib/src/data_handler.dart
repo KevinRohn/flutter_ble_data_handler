@@ -475,6 +475,7 @@ class DataSender {
         ..add(crc8)
         ..addAll(sublist);
       ByteConversionUtilities.addPadding(chunk1Bytes, mtu);
+      print(chunk1Bytes);
       await bluetoothCharacteristic.write(chunk1Bytes, withoutResponse: false);
 
       int runningListIndex = addToHeaderSizeSafe;
@@ -499,7 +500,7 @@ class DataSender {
           ..add(crc8)
           ..addAll(sublist);
         ByteConversionUtilities.addPadding(chunkBytes, mtu);
-
+        print(chunkBytes);
         await bluetoothCharacteristic.write(chunkBytes, withoutResponse: false);
         //print("Sent chunk: $runningChunkIndex");
         print("Current chunk $runningChunkIndex of ${chunkCount - 1}");
@@ -550,37 +551,29 @@ class UpdateHandler {
   BehaviorSubject<bool> _isSending = BehaviorSubject.seeded(false);
   int _totalChunkCount = 0;
   String _lastDumpedValue;
-
+  
   /// The stream is updated if a Message data is completly dumped
   Stream<String> get dumpedValue => _dumpedValue.stream;
-
   /// Returns the last dumped value
   String get lastDumpedValue => _lastDumpedValue;
-
   /// The stream returns the current state of the send process
   Stream<bool> get isSending => _isSending.stream;
-
   /// The stream returns the current chunk if there is a send process
   Stream<int> get chunkCount => _chunkCount.stream;
-
   /// The value returns the total count of chunks
   int get totalChunkCount => _totalChunkCount;
 
   sendingCallback(bool value) {
     _isSending.add(value);
   }
-
   chunkCountCallback(int value) {
     _chunkCount.add(value);
   }
-
   totalCountCallback(int value) {
     _totalChunkCount = value;
   }
-
   updateDumpedValue(String value) {
     _dumpedValue.add(value);
     _lastDumpedValue = value;
   }
-
 }
