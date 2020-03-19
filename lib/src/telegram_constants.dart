@@ -1,16 +1,10 @@
 library telegram_constants;
 
 /// Defines the initial marker of a string (command) message.
-const STRING_TELEGRAM_PREFIX = "\$S\$";
-
-/// Defines the end marker of a string (command) message.
-const STRING_TELEGRAM_POSTFIX = "\$E\$";
+const STRING_TELEGRAM_PREFIX = "@S@";
 
 /// Defines the initial marker of a file sending message.
-const FILE_TELEGRAM_PREFIX = "\$F\$";
-
-/// Defines the end marker of a file sending message.
-const FILE_TELEGRAM_POSTFIX = "\$E\$";
+const FILE_TELEGRAM_PREFIX = "@F@";
 
 /// The default data package size, used if none is defined.
 const DEFAULT_TELEGRAM_MTU = 155;
