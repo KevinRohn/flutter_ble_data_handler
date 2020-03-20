@@ -334,7 +334,7 @@ class DataSender {
       // chunks
       if (DEBUG) print("Used MTU = $mtu");
       int chunkMaxDataSize =
-          mtu - 4; // chunk size minus the chunk index, a 32bit integer.
+          mtu;//  - 4; // chunk size minus the chunk index, a 32bit integer.
 
       // calculate chunk counts, considering that the first has no index, but any other chunk does
       // hence [chunkMaxDataSize] is used.
@@ -372,8 +372,8 @@ class DataSender {
       int runningListIndex = addToHeaderSizeSafe;
       int runningChunkIndex = 1;
       while (runningChunkIndex < chunkCount) {
-        List<int> indexBytes =
-            ByteConversionUtilities.bytesFromInt32(runningChunkIndex);
+        // List<int> indexBytes =
+        //     ByteConversionUtilities.bytesFromInt32(runningChunkIndex);
         var from = runningListIndex;
         var to = runningListIndex + chunkMaxDataSize;
         if (to > fileBytesLength) {
@@ -382,7 +382,9 @@ class DataSender {
         var sublist = fileBytes.sublist(from, to);
         runningListIndex = runningListIndex + chunkMaxDataSize;
 
-        List<int> chunkBytes = []..addAll(indexBytes)..addAll(sublist);
+// 
+        // List<int> chunkBytes = []..addAll(indexBytes)..addAll(sublist);
+        List<int> chunkBytes = []..addAll(sublist);
         ByteConversionUtilities.addPadding(chunkBytes, mtu);
 
         await bluetoothCharacteristic.write(chunkBytes, withoutResponse: false);
