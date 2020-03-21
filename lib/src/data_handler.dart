@@ -136,17 +136,17 @@ class CommandReceiver implements Receiver {
   @override
   bool onDataEvent(List<int> bytesList) {
     _runningChunkCount++;
-    var chunkIndex = bytesList[0];
-    var crc8 = bytesList[1]; // TODO handle that at some point
+    // var chunkIndex = bytesList[0];
+    // var crc8 = bytesList[1]; // TODO handle that at some point
 
-    if (chunkIndex > _chunkCount + 1) {
-      print(
-          "ERROR with last chunk of index $chunkIndex: ${String.fromCharCodes(bytesList)}");
-      throw StateError("Something when wrong in the data stream.");
-    }
+    // if (chunkIndex > _chunkCount + 1) {
+    //   print(
+    //       "ERROR with last chunk of index $chunkIndex: ${String.fromCharCodes(bytesList)}");
+    //   throw StateError("Something when wrong in the data stream.");
+    // }
 
-    var dataBytes = bytesList.sublist(2);
-    _bytesMap[chunkIndex] = dataBytes;
+    // var dataBytes = bytesList.sublist(2);
+    _bytesMap[_runningChunkCount] = bytesList;
 
     if (_runningChunkCount < _chunkCount - 1) {
       return true;
@@ -228,15 +228,15 @@ class FileReceiver implements Receiver {
   @override
   bool onDataEvent(List<int> bytesList) {
     _runningChunkCount++;
-    var chunkIndex = ByteConversionUtilities.getInt32(bytesList.sublist(0, 4));
-    if (chunkIndex > _chunkCount + 1) {
-      print(
-          "ERROR with last chunk of index $chunkIndex: ${String.fromCharCodes(bytesList)}");
-      throw StateError("Something when wrong in the data stream.");
-    }
+    // var chunkIndex = ByteConversionUtilities.getInt32(bytesList.sublist(0, 4));
+    // if (chunkIndex > _chunkCount + 1) {
+    //   print(
+    //       "ERROR with last chunk of index $chunkIndex: ${String.fromCharCodes(bytesList)}");
+    //   throw StateError("Something when wrong in the data stream.");
+    // }
 
-    var dataBytes = bytesList.sublist(4);
-    _bytesMap[chunkIndex] = dataBytes;
+    // var dataBytes = bytesList.sublist(4);
+    _bytesMap[_runningChunkCount] = bytesList;
 
     if (_runningChunkCount < _chunkCount - 1) {
       return true;
