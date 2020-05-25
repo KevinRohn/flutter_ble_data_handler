@@ -120,12 +120,19 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
                     IconButton(
                       icon: Icon(Icons.text_fields),
                       onPressed: () async {
-                        var bytesList = DataSender.instance
-                            .encodeCommand("\$S\$1\$C\$onNetworkInit\$E\$");
-                        final channel = IOWebSocketChannel.connect(websocket);
+                        Future.delayed(Duration(milliseconds: 300), () async {
+                          final channel = IOWebSocketChannel.connect(websocket);
 
-                        channel.sink.add(bytesList);
-                        await channel.sink.close();
+                          var bytesList = DataSender.instance
+                              .encodeCommand("\$S\$1\$C\$onNetworkInit\$E\$");
+                          channel.sink.add(bytesList);
+                          Future.delayed(Duration(milliseconds: 300), () async {
+                            bytesList = DataSender.instance.encodeCommand(
+                                "\$S\$1\$C\$onSerialSettings\$E\$");
+                            channel.sink.add(bytesList);
+                            await channel.sink.close();
+                          });
+                        });
                       },
                     ),
                   ],
