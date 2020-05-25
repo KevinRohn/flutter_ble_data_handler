@@ -10,9 +10,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  crypto: 2.1.3
+  crypto: 2.1.4
   crclib: 1.0.1
-  rxdart: ^0.22.0
+  rxdart: ^0.24.0
 
 
 dev_dependencies:

@@ -153,7 +153,7 @@
          y="60.468426"
          x="11.039291"
          id="tspan854"
-         sodipodi:role="line">$F$</tspan></text>
+         sodipodi:role="line">@F@</tspan></text>
     <rect
        y="32.41666"
        x="26.458334"
@@ -789,7 +789,7 @@
          id="tspan1160"
          x="11.039291"
          y="199.37466"
-         style="stroke-width:0.14945577px">$S$</tspan></text>
+         style="stroke-width:0.14945577px">@S@</tspan></text>
     <rect
        style="opacity:1;vector-effect:none;fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.5291667;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        id="rect1164"

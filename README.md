@@ -17,7 +17,7 @@ To get started using this package to communicate with a raspberry Pi and Flutter
 |                                  | File data mode (File sending)                                      | Message data mode (Command sending)                     |
 |----------------------------------|--------------------------------------------------------------------|---------------------------------------------------------|
 | Description                      | This mode is used for transfering binary files over ble.           | This mode is used for transfering string data over ble. |
-| Indicator                        | \$F\$                                                              | \$S\$                                                   |
+| Indicator                        | \@F\@                                                             | \@S\@                                                    |
 | transfer mode                    | binary                                                             | binary and retransformation                             |
 | Header size - initial chunk      | 84 bytes                                                           | 7 bytes                                                 |
 | Header size - following chunk(s) | 4 bytes                                                            | 2 bytes                                                 |
