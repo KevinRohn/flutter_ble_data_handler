@@ -57,7 +57,21 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
                   IconButton(
                     icon: Icon(Icons.text_fields),
                     onPressed: () async {
-                      await bleHandling.sendCommand();
+                      // let's send 2 messages after 1 second delay
+                      Future.delayed(Duration(milliseconds: 300), () {})
+                          .whenComplete(() {
+                        bleHandling
+                            .sendCommand("\$S\$1\$C\$onNetworkInit\$E\$")
+                            .whenComplete(() {
+                          Future.delayed(Duration(milliseconds: 300), () {})
+                              .whenComplete(() {
+                            bleHandling.sendCommand(
+                                "\$S\$1\$C\$onSerialSettings\$E\$");
+                          });
+                        });
+                      });
+
+                      // await bleHandling.sendCommand(null);
                     },
                   ),
                 ],

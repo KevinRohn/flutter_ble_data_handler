@@ -69,9 +69,9 @@ class BleHandling {
             totalCountCallback: UpdateHandler.instance.totalCountCallback);
   }
 
-  Future<void> sendCommand() async {
+  Future<void> sendCommand(String command) async {
     await DataSender.instance
-        .sendCommand(_txCharacteristic, null, // null will be command here
+        .sendCommand(_txCharacteristic, command, 
             sendingCallback: UpdateHandler.instance.sendingCallback,
             chunkCountCallback: UpdateHandler.instance.chunkCountCallback,
             totalCountCallback: UpdateHandler.instance.totalCountCallback);
