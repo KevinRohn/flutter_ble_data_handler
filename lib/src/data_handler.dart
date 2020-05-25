@@ -90,7 +90,6 @@ abstract class Receiver {
 
   /// Dumps the retrieved data to the next processing chain.
   void dump();
-
 }
 
 /// A singleton that takes care of receiving command data.
@@ -172,7 +171,6 @@ class CommandReceiver implements Receiver {
     UpdateHandler.instance.updateDumpedValue(stringCommand);
     _lastDump = stringCommand;
   }
-
 }
 
 /// A singleton that takes care of receiving file data.
@@ -334,7 +332,7 @@ class DataSender {
       // chunks
       if (DEBUG) print("Used MTU = $mtu");
       int chunkMaxDataSize =
-          mtu;//  - 4; // chunk size minus the chunk index, a 32bit integer.
+          mtu; //  - 4; // chunk size minus the chunk index, a 32bit integer.
 
       // calculate chunk counts, considering that the first has no index, but any other chunk does
       // hence [chunkMaxDataSize] is used.
@@ -382,7 +380,7 @@ class DataSender {
         var sublist = fileBytes.sublist(from, to);
         runningListIndex = runningListIndex + chunkMaxDataSize;
 
-// 
+//
         // List<int> chunkBytes = []..addAll(indexBytes)..addAll(sublist);
         List<int> chunkBytes = []..addAll(sublist);
         ByteConversionUtilities.addPadding(chunkBytes, mtu);
@@ -400,6 +398,70 @@ class DataSender {
     } finally {
       _isSending = false;
     }
+  }
+
+  /// Transforms a command into the list of bytes that can be sent via websocket.
+  List<int> encodeCommand(String command) {
+    command = command ??= TestData.COMMAND_411BYTES;
+
+    List<int> specs = TelegramConstants.STRING_TELEGRAM_PREFIX.codeUnits;
+
+    // totalsize, 16 bits is enough
+    var commandBytesLength = command.length;
+    List<int> totalSizeBytes16 =
+        ByteConversionUtilities.bytesFromInt16(commandBytesLength);
+
+    List<int> headerBytes = []
+      ..addAll(specs) //
+      ..addAll(totalSizeBytes16) //
+      ..add(1);
+
+    List<int> commandBytes = command.codeUnits;
+    int commandCrc8 = Crc8Atm().convert(commandBytes);
+    // send fist one with header
+    //
+    // 3 bytes $S$ + 2 bytes totalsize + 1 int chunkCount + 1 int crc8 + all data
+    List<int> chunk1Bytes = []
+      ..addAll(headerBytes)
+      ..add(commandCrc8)
+      ..addAll(commandBytes);
+    return chunk1Bytes;
+  }
+
+  /// Transforms a command into the list of bytes that can be sent via websocket.
+  List<int> encodeFile(String filePath) {
+    filePath = filePath ??= TestData.path;
+    String fileName = basename(filePath);
+
+    Uint8List fileBytes = ByteConversionUtilities.bytesFromFile(filePath);
+
+    String md5hash = md5.convert(fileBytes).toString();
+
+    List<int> specs = TelegramConstants.FILE_TELEGRAM_PREFIX.codeUnits;
+
+    // totalsize
+    var fileBytesLength = fileBytes.length;
+    List<int> totalSizeBytes =
+        ByteConversionUtilities.bytesFromInt32(fileBytesLength);
+
+    // calculate chunk counts, considering that the first has no index, but any other chunk does
+    // hence [chunkMaxDataSize] is used.
+    int chunkCount = 1;
+
+    List<int> chunkCountBytes =
+        ByteConversionUtilities.bytesFromInt32(chunkCount);
+
+    List<int> nameBytes = ByteConversionUtilities.nameToBytes(fileName);
+
+    List<int> headerBytes = []
+      ..addAll(specs) //
+      ..addAll(totalSizeBytes) //
+      ..addAll(chunkCountBytes) //
+      ..addAll(md5hash.codeUnits) //
+      ..addAll(nameBytes);
+
+    List<int> chunk1Bytes = []..addAll(headerBytes)..addAll(fileBytes);
+    return chunk1Bytes;
   }
 
   /// Send a string [command] through a given [bluetoothCharacteristic].
@@ -499,8 +561,7 @@ class DataSender {
 //        tmp.setList(sublist);
 //        var value = tmp.getValue();
 
-        List<int> chunkBytes = []
-          ..addAll(sublist);
+        List<int> chunkBytes = []..addAll(sublist);
         //ByteConversionUtilities.addPadding(chunkBytes, mtu);
 
         chunkString = new String.fromCharCodes(chunkBytes);
@@ -540,7 +601,6 @@ class TestData {
       "\$S\$1\$2\$4\$AAAAAAAAAABBBBBBBBBBCCCCCCCCCCDDDDDDDDDDEEEEEEEEEEFFFFFFFFFFGGGGGGGGGGHHHHHHHHHHIIIIIIIIIIJJJJJJJJJJKKKKKKKKKKLLLLLLLLLLMMMMMMMMMMNNNNNNNNNNOOOOOOOOOOPPPPPPPPPPQQQQQQQQQQ\$E\$";
   static const COMMAND_411BYTES =
       "\$S\$1\$2\$4\$AAAAAAAAAA-AAAAAAAAAABBBBBBBBBB-BBBBBBBBBBCCCCCCCCCC-CCCCCCCCCCDDDDDDDDDD-DDDDDDDDDDEEEEEEEEEE-EEEEEEEEEEFFFFFFFFFF-FFFFFFFFFFGGGGGGGGGG-GGGGGGGGGGHHHHHHHHHH-HHHHHHHHHHIIIIIIIIII-IIIIIIIIIIJJJJJJJJJJ-JJJJJJJJJJKKKKKKKKKK-KKKKKKKKKKLLLLLLLLLL-LLLLLLLLLLMMMMMMMMMM-MMMMMMMMMMNNNNNNNNNN-NNNNNNNNNNOOOOOOOOOO-OOOOOOOOOOPPPPPPPPPP-PPPPPPPPPPQQQQQQQQQQ-QQQQQQQQQQRRRRRRRRRR-RRRRRRRRRRSSSSSSSSSS-SSSSSSSSSS\$E\$";
-
 }
 
 /// Class to help with updating streams. (Singletone)
@@ -557,27 +617,34 @@ class UpdateHandler {
   BehaviorSubject<bool> _isSending = BehaviorSubject.seeded(false);
   int _totalChunkCount = 0;
   String _lastDumpedValue;
-  
+
   /// The stream is updated if a Message data is completly dumped
   Stream<String> get dumpedValue => _dumpedValue.stream;
+
   /// Returns the last dumped value
   String get lastDumpedValue => _lastDumpedValue;
+
   /// The stream returns the current state of the send process
   Stream<bool> get isSending => _isSending.stream;
+
   /// The stream returns the current chunk if there is a send process
   Stream<int> get chunkCount => _chunkCount.stream;
+
   /// The value returns the total count of chunks
   int get totalChunkCount => _totalChunkCount;
 
   sendingCallback(bool value) {
     _isSending.add(value);
   }
+
   chunkCountCallback(int value) {
     _chunkCount.add(value);
   }
+
   totalCountCallback(int value) {
     _totalChunkCount = value;
   }
+
   updateDumpedValue(String value) {
     _dumpedValue.add(value);
     _lastDumpedValue = value;

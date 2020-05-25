@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_ble_data_handler/handler.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:web_socket_channel/io.dart';
 
 import 'ble_device_data.dart';
 import 'ble_handling.dart';
@@ -32,63 +34,105 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
     final bleDeviceData = Provider.of<BleDeviceProvider>(context);
     final bleHandling = Provider.of<BleHandling>(context);
 
+    const websocket = "ws://192.168.1.7:8081/pi";
+
     return Container(
       child: Column(
-        children: <Widget>[
-          ListTile(
-            title: Text(
-              (bleDeviceData.bleDeviceData.device == null)
-                  ? "N/A"
-                  : bleDeviceData.bleDeviceData.device.name,
-              style: TextStyle(fontSize: 16),
-              maxLines: 1,
-            ),
-            trailing: SizedBox(child: _buildStateButtons(context), width: 38),
-            leading: SizedBox(
-              width: 100,
-              child: Row(
-                children: <Widget>[
-                  IconButton(
-                    icon: Icon(Icons.insert_drive_file),
-                    onPressed: () async {
-                      await bleHandling.sendFile();
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.text_fields),
-                    onPressed: () async {
-                      // let's send 2 messages after 1 second delay
-                      Future.delayed(Duration(milliseconds: 300), () {})
-                          .whenComplete(() {
-                        bleHandling
-                            .sendCommand("\$S\$1\$C\$onNetworkInit\$E\$")
-                            .whenComplete(() {
+        children: [
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                title: Text(
+                  (bleDeviceData.bleDeviceData.device == null)
+                      ? "N/A"
+                      : bleDeviceData.bleDeviceData.device.name,
+                  style: TextStyle(fontSize: 16),
+                  maxLines: 1,
+                ),
+                trailing:
+                    SizedBox(child: _buildStateButtons(context), width: 38),
+                leading: SizedBox(
+                  width: 100,
+                  child: Row(
+                    children: <Widget>[
+                      IconButton(
+                        icon: Icon(Icons.insert_drive_file),
+                        onPressed: () async {
+                          await bleHandling.sendFile();
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.text_fields),
+                        onPressed: () async {
+                          // let's send 2 messages after 1 second delay
                           Future.delayed(Duration(milliseconds: 300), () {})
                               .whenComplete(() {
-                            bleHandling.sendCommand(
-                                "\$S\$1\$C\$onSerialSettings\$E\$");
+                            bleHandling
+                                .sendCommand("\$S\$1\$C\$onNetworkInit\$E\$")
+                                .whenComplete(() {
+                              Future.delayed(Duration(milliseconds: 300), () {})
+                                  .whenComplete(() {
+                                bleHandling.sendCommand(
+                                    "\$S\$1\$C\$onSerialSettings\$E\$");
+                              });
+                            });
                           });
-                        });
-                      });
 
-                      // await bleHandling.sendCommand(null);
-                    },
+                          // await bleHandling.sendCommand(null);
+                        },
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+              StreamBuilder<bool>(
+                  stream: FlutterBlue.instance.isScanning,
+                  initialData: false,
+                  builder: (c, snapshot) {
+                    if (snapshot.data) {
+                      return LinearProgressIndicator();
+                    } else {
+                      return Container();
+                    }
+                  }),
+              _buildScanResult(context),
+            ],
           ),
-          StreamBuilder<bool>(
-              stream: FlutterBlue.instance.isScanning,
-              initialData: false,
-              builder: (c, snapshot) {
-                if (snapshot.data) {
-                  return LinearProgressIndicator();
-                } else {
-                  return Container();
-                }
-              }),
-          _buildScanResult(context),
+          Container(),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: Text(websocket),
+                leading: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.insert_drive_file),
+                      onPressed: () async {
+                        var bytesList = DataSender.instance.encodeFile(null);
+                        final channel = IOWebSocketChannel.connect(websocket);
+                        channel.sink.add(bytesList);
+                        await channel.sink.close();
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.text_fields),
+                      onPressed: () async {
+                        var bytesList = DataSender.instance
+                            .encodeCommand("\$S\$1\$C\$onNetworkInit\$E\$");
+                        final channel = IOWebSocketChannel.connect(websocket);
+
+                        channel.sink.add(bytesList);
+                        await channel.sink.close();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

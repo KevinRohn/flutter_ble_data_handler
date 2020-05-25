@@ -41,20 +41,16 @@ class _FlutterBlueAppState extends State<FlutterBlueApp> {
         color: Colors.lightBlue,
         home: Scaffold(
           appBar: AppBar(),
-          body: Stack(
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Container(
-                    child: SearchExpansionTile(
-                      onSearchPressed: onSearchPressed,
-                    ),
-                  ),
-                  Center(
-                    child: ShowData(),
-                  )
-                ],
+              Container(
+                child: SearchExpansionTile(
+                  onSearchPressed: onSearchPressed,
+                ),
+              ),
+              Center(
+                child: ShowData(),
               ),
             ],
           ),
@@ -141,7 +137,6 @@ class _ShowDataState extends State<ShowData> {
               builder: (c, snapshot) {
                 if (snapshot.hasData) {
                   return Text("${snapshot.data}");
-                   
                 } else {
                   return Container();
                 }
