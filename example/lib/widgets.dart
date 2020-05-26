@@ -28,13 +28,25 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
   bool _showConnecting = false; // Show connecting state
 
   final String searchForMatchingName = "powerIO-Dongle";
+  static const websocket2Pi = "ws://192.168.1.2:8081/pi";
+  static const websocketFromPi = "ws://192.168.1.2:8081/ws";
+  String _incomingWsdata = "";
+
+  @override
+  void initState() {
+    final channelFromPi = IOWebSocketChannel.connect(websocketFromPi);
+    channelFromPi.stream.listen((message) {
+      setState(() {
+        _incomingWsdata = message.toString();
+      });
+    });
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     final bleDeviceData = Provider.of<BleDeviceProvider>(context);
     final bleHandling = Provider.of<BleHandling>(context);
-
-    const websocket = "ws://192.168.1.7:8081/pi";
 
     return Container(
       child: Column(
@@ -104,7 +116,7 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                title: Text(websocket),
+                title: Text(websocket2Pi),
                 leading: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -112,7 +124,8 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
                       icon: Icon(Icons.insert_drive_file),
                       onPressed: () async {
                         var bytesList = DataSender.instance.encodeFile(null);
-                        final channel = IOWebSocketChannel.connect(websocket);
+                        final channel =
+                            IOWebSocketChannel.connect(websocket2Pi);
                         channel.sink.add(bytesList);
                         await channel.sink.close();
                       },
@@ -121,7 +134,8 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
                       icon: Icon(Icons.text_fields),
                       onPressed: () async {
                         Future.delayed(Duration(milliseconds: 300), () async {
-                          final channel = IOWebSocketChannel.connect(websocket);
+                          final channel =
+                              IOWebSocketChannel.connect(websocket2Pi);
 
                           var bytesList = DataSender.instance
                               .encodeCommand("\$S\$1\$C\$onNetworkInit\$E\$");
@@ -138,6 +152,9 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
                   ],
                 ),
               ),
+              _incomingWsdata != null && _incomingWsdata.length > 0
+                  ? Text(_incomingWsdata)
+                  : Container()
             ],
           ),
         ],
