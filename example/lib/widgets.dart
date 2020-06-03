@@ -28,8 +28,8 @@ class SearchExpansionTileState extends State<SearchExpansionTile> {
   bool _showConnecting = false; // Show connecting state
 
   final String searchForMatchingName = "powerIO-Dongle";
-  static const websocket2Pi = "ws://192.168.1.2:8081/pi";
-  static const websocketFromPi = "ws://192.168.1.2:8081/ws";
+  static const websocket2Pi = "ws://192.168.2.125:8081/pi";
+  static const websocketFromPi = "ws://192.168.2.125:8081/ws";
   String _incomingWsdata = "";
 
   @override
