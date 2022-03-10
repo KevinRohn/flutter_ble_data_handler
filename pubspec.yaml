@@ -2,7 +2,6 @@ name: flutter_ble_data_handler
 description: A flutter package to handle bluetooth low energy data transmission.
 version: 0.1.1
 author: kevin@rohn.io
-homepage:
 
 environment:
   sdk: ">=2.1.0 <3.0.0"
@@ -10,7 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  crypto: 2.1.4
+  crypto: 3.0.0
   crclib: 3.0.0
   rxdart: ^0.24.0
 
