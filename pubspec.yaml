@@ -11,7 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   crypto: 2.1.4
-  crclib: 1.0.1
+  crclib: 3.0.0
   rxdart: ^0.24.0
 
 
