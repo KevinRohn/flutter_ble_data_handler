@@ -19,7 +19,7 @@ class DataReceiver {
 
   DataReceiver._internal();
 
-  Receiver _receiver;
+  Receiver? _receiver;
 
   /// Adds and array of bytes [dataWithCheckBytes] to this handler.
   ///
@@ -38,7 +38,7 @@ class DataReceiver {
       // if new, get the right receiver and initialize it with the first chunk
       _receiver = Receiver.getReceiver(dataWithCheckBytes);
       if (_receiver != null) {
-        bool hasMoreData = _receiver.init(dataWithCheckBytes);
+        bool hasMoreData = _receiver!.init(dataWithCheckBytes);
         if (!hasMoreData) {
           // done already, reset
           _receiver = null;
@@ -46,7 +46,7 @@ class DataReceiver {
       }
     } else {
       try {
-        return _receiver.onDataEvent(dataWithCheckBytes);
+        return _receiver!.onDataEvent(dataWithCheckBytes);
       } catch (e) {
         _receiver = null;
         throw e;
@@ -59,14 +59,14 @@ class DataReceiver {
   /// Dump the current data list into a file.
   void dump() {
     print("dump was called");
-    _receiver.dump();
+    _receiver!.dump();
     _receiver = null;
   }
 }
 
 /// An abstract class that handles incoming data.
 abstract class Receiver {
-  static Receiver getReceiver(List<int> bytesList) {
+  static Receiver? getReceiver(List<int> bytesList) {
     if (bytesList.length < 3) {
       return null;
     }
@@ -99,12 +99,12 @@ abstract class Receiver {
 
 /// A singleton that takes care of receiving command data.
 class CommandReceiver implements Receiver {
-  SplayTreeMap<int, List<int>> _bytesMap;
-  int _chunkCount;
-  int _runningChunkCount;
-  int _totalLength;
-  int _crc;
-  String _lastDump;
+  late SplayTreeMap<int, List<int>> _bytesMap;
+  late int _chunkCount;
+  late int _runningChunkCount;
+  late int _totalLength;
+  late int _crc;
+  late String _lastDump;
 
   @override
   bool init(List<int> bytesList) {
@@ -118,7 +118,8 @@ class CommandReceiver implements Receiver {
               bytesList.sublist(TelegramConstants.HEADER_SIZE_COMMANDS)));
     }
     _bytesMap = new SplayTreeMap();
-    _totalLength = ByteConversionUtilities.getInt16(bytesList.sublist(3, 5));
+    _totalLength = ByteConversionUtilities.getInt16(
+        Uint8List.fromList(bytesList.sublist(3, 5)));
     _chunkCount = bytesList[5];
     _crc = bytesList[6];
 
@@ -188,12 +189,12 @@ class FileReceiver implements Receiver {
 
   FileReceiver._internal();
 
-  SplayTreeMap<int, List<int>> _bytesMap;
-  int _chunkCount;
-  int _runningChunkCount;
-  int _totalLength;
-  String _md5;
-  String _fileName;
+  late SplayTreeMap<int, List<int>> _bytesMap;
+  late int _chunkCount;
+  late int _runningChunkCount;
+  late int _totalLength;
+  late String _md5;
+  late String _fileName;
 
   @override
   bool init(List<int> bytesList) {
@@ -207,8 +208,10 @@ class FileReceiver implements Receiver {
               bytesList.sublist(TelegramConstants.HEADER_SIZE_FILES)));
     }
     _bytesMap = new SplayTreeMap();
-    _totalLength = ByteConversionUtilities.getInt32(bytesList.sublist(3, 7));
-    _chunkCount = ByteConversionUtilities.getInt32(bytesList.sublist(7, 11));
+    _totalLength = ByteConversionUtilities.getInt32(
+        Uint8List.fromList(bytesList.sublist(3, 7)));
+    _chunkCount = ByteConversionUtilities.getInt32(
+        Uint8List.fromList(bytesList.sublist(7, 11)));
     _md5 = String.fromCharCodes(bytesList.sublist(11, 43));
     _fileName = String.fromCharCodes(
         bytesList.sublist(43, TelegramConstants.HEADER_SIZE_FILES));
@@ -559,7 +562,7 @@ class UpdateHandler {
   BehaviorSubject<int> _chunkCount = BehaviorSubject.seeded(0);
   BehaviorSubject<bool> _isSending = BehaviorSubject.seeded(false);
   int _totalChunkCount = 0;
-  String _lastDumpedValue;
+  late String _lastDumpedValue;
 
   /// The stream is updated if a Message data is completly dumped
   Stream<String> get dumpedValue => _dumpedValue.stream;
