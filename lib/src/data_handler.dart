@@ -2,6 +2,11 @@ part of flutter_ble_data_handler;
 
 const DEBUG = false;
 
+class Crc8Atm extends ParametricCrc {
+  Crc8Atm()
+      : super(8, 0x07, 0, 0x55, inputReflected: false, outputReflected: false);
+}
+
 /// A singleton that takes care of receiving data and dump them.
 class DataReceiver {
   static final DataReceiver _singleton = DataReceiver._internal();
@@ -14,7 +19,7 @@ class DataReceiver {
 
   DataReceiver._internal();
 
-  Receiver _receiver;
+  Receiver? _receiver;
 
   /// Adds and array of bytes [dataWithCheckBytes] to this handler.
   ///
@@ -33,7 +38,7 @@ class DataReceiver {
       // if new, get the right receiver and initialize it with the first chunk
       _receiver = Receiver.getReceiver(dataWithCheckBytes);
       if (_receiver != null) {
-        bool hasMoreData = _receiver.init(dataWithCheckBytes);
+        bool hasMoreData = _receiver!.init(dataWithCheckBytes);
         if (!hasMoreData) {
           // done already, reset
           _receiver = null;
@@ -41,7 +46,7 @@ class DataReceiver {
       }
     } else {
       try {
-        return _receiver.onDataEvent(dataWithCheckBytes);
+        return _receiver!.onDataEvent(dataWithCheckBytes);
       } catch (e) {
         _receiver = null;
         throw e;
@@ -54,14 +59,14 @@ class DataReceiver {
   /// Dump the current data list into a file.
   void dump() {
     print("dump was called");
-    _receiver.dump();
+    _receiver!.dump();
     _receiver = null;
   }
 }
 
 /// An abstract class that handles incoming data.
 abstract class Receiver {
-  static Receiver getReceiver(List<int> bytesList) {
+  static Receiver? getReceiver(List<int> bytesList) {
     if (bytesList.length < 3) {
       return null;
     }
@@ -90,17 +95,16 @@ abstract class Receiver {
 
   /// Dumps the retrieved data to the next processing chain.
   void dump();
-
 }
 
 /// A singleton that takes care of receiving command data.
 class CommandReceiver implements Receiver {
-  SplayTreeMap<int, List<int>> _bytesMap;
-  int _chunkCount;
-  int _runningChunkCount;
-  int _totalLength;
-  int _crc;
-  String _lastDump;
+  late SplayTreeMap<int, List<int>> _bytesMap;
+  late int _chunkCount;
+  late int _runningChunkCount;
+  late int _totalLength;
+  late int _crc;
+  late String _lastDump;
 
   @override
   bool init(List<int> bytesList) {
@@ -114,7 +118,8 @@ class CommandReceiver implements Receiver {
               bytesList.sublist(TelegramConstants.HEADER_SIZE_COMMANDS)));
     }
     _bytesMap = new SplayTreeMap();
-    _totalLength = ByteConversionUtilities.getInt16(bytesList.sublist(3, 5));
+    _totalLength = ByteConversionUtilities.getInt16(
+        Uint8List.fromList(bytesList.sublist(3, 5)));
     _chunkCount = bytesList[5];
     _crc = bytesList[6];
 
@@ -172,7 +177,6 @@ class CommandReceiver implements Receiver {
     UpdateHandler.instance.updateDumpedValue(stringCommand);
     _lastDump = stringCommand;
   }
-
 }
 
 /// A singleton that takes care of receiving file data.
@@ -185,12 +189,12 @@ class FileReceiver implements Receiver {
 
   FileReceiver._internal();
 
-  SplayTreeMap<int, List<int>> _bytesMap;
-  int _chunkCount;
-  int _runningChunkCount;
-  int _totalLength;
-  String _md5;
-  String _fileName;
+  late SplayTreeMap<int, List<int>> _bytesMap;
+  late int _chunkCount;
+  late int _runningChunkCount;
+  late int _totalLength;
+  late String _md5;
+  late String _fileName;
 
   @override
   bool init(List<int> bytesList) {
@@ -204,8 +208,10 @@ class FileReceiver implements Receiver {
               bytesList.sublist(TelegramConstants.HEADER_SIZE_FILES)));
     }
     _bytesMap = new SplayTreeMap();
-    _totalLength = ByteConversionUtilities.getInt32(bytesList.sublist(3, 7));
-    _chunkCount = ByteConversionUtilities.getInt32(bytesList.sublist(7, 11));
+    _totalLength = ByteConversionUtilities.getInt32(
+        Uint8List.fromList(bytesList.sublist(3, 7)));
+    _chunkCount = ByteConversionUtilities.getInt32(
+        Uint8List.fromList(bytesList.sublist(7, 11)));
     _md5 = String.fromCharCodes(bytesList.sublist(11, 43));
     _fileName = String.fromCharCodes(
         bytesList.sublist(43, TelegramConstants.HEADER_SIZE_FILES));
@@ -334,7 +340,7 @@ class DataSender {
       // chunks
       if (DEBUG) print("Used MTU = $mtu");
       int chunkMaxDataSize =
-          mtu;//  - 4; // chunk size minus the chunk index, a 32bit integer.
+          mtu; //  - 4; // chunk size minus the chunk index, a 32bit integer.
 
       // calculate chunk counts, considering that the first has no index, but any other chunk does
       // hence [chunkMaxDataSize] is used.
@@ -365,7 +371,9 @@ class DataSender {
 
       // send fist one with header
       var sublist = fileBytes.sublist(0, addToHeaderSizeSafe);
-      List<int> chunk1Bytes = []..addAll(headerBytes)..addAll(sublist);
+      List<int> chunk1Bytes = []
+        ..addAll(headerBytes)
+        ..addAll(sublist);
       ByteConversionUtilities.addPadding(chunk1Bytes, mtu);
       await bluetoothCharacteristic.write(chunk1Bytes, withoutResponse: false);
 
@@ -382,7 +390,7 @@ class DataSender {
         var sublist = fileBytes.sublist(from, to);
         runningListIndex = runningListIndex + chunkMaxDataSize;
 
-// 
+//
         // List<int> chunkBytes = []..addAll(indexBytes)..addAll(sublist);
         List<int> chunkBytes = []..addAll(sublist);
         ByteConversionUtilities.addPadding(chunkBytes, mtu);
@@ -468,7 +476,7 @@ class DataSender {
       int addToHeaderSizeSafe = math.min(addToHeaderSize, commandBytesLength);
 
       List<int> commandBytes = command.codeUnits;
-      int commandCrc8 = Crc8Atm().convert(commandBytes);
+      int commandCrc8 = Crc8Atm().convert(commandBytes).toBigInt().toInt();
       // send fist one with header
       //
       // First chunk will be: 3 bytes $S$ + 2 bytes totalsize + 1 int chunkCount + 1 int crc8 + data piece that fits
@@ -499,8 +507,7 @@ class DataSender {
 //        tmp.setList(sublist);
 //        var value = tmp.getValue();
 
-        List<int> chunkBytes = []
-          ..addAll(sublist);
+        List<int> chunkBytes = []..addAll(sublist);
         //ByteConversionUtilities.addPadding(chunkBytes, mtu);
 
         chunkString = new String.fromCharCodes(chunkBytes);
@@ -540,7 +547,6 @@ class TestData {
       "\$S\$1\$2\$4\$AAAAAAAAAABBBBBBBBBBCCCCCCCCCCDDDDDDDDDDEEEEEEEEEEFFFFFFFFFFGGGGGGGGGGHHHHHHHHHHIIIIIIIIIIJJJJJJJJJJKKKKKKKKKKLLLLLLLLLLMMMMMMMMMMNNNNNNNNNNOOOOOOOOOOPPPPPPPPPPQQQQQQQQQQ\$E\$";
   static const COMMAND_411BYTES =
       "\$S\$1\$2\$4\$AAAAAAAAAA-AAAAAAAAAABBBBBBBBBB-BBBBBBBBBBCCCCCCCCCC-CCCCCCCCCCDDDDDDDDDD-DDDDDDDDDDEEEEEEEEEE-EEEEEEEEEEFFFFFFFFFF-FFFFFFFFFFGGGGGGGGGG-GGGGGGGGGGHHHHHHHHHH-HHHHHHHHHHIIIIIIIIII-IIIIIIIIIIJJJJJJJJJJ-JJJJJJJJJJKKKKKKKKKK-KKKKKKKKKKLLLLLLLLLL-LLLLLLLLLLMMMMMMMMMM-MMMMMMMMMMNNNNNNNNNN-NNNNNNNNNNOOOOOOOOOO-OOOOOOOOOOPPPPPPPPPP-PPPPPPPPPPQQQQQQQQQQ-QQQQQQQQQQRRRRRRRRRR-RRRRRRRRRRSSSSSSSSSS-SSSSSSSSSS\$E\$";
-
 }
 
 /// Class to help with updating streams. (Singletone)
@@ -556,28 +562,35 @@ class UpdateHandler {
   BehaviorSubject<int> _chunkCount = BehaviorSubject.seeded(0);
   BehaviorSubject<bool> _isSending = BehaviorSubject.seeded(false);
   int _totalChunkCount = 0;
-  String _lastDumpedValue;
-  
+  late String _lastDumpedValue;
+
   /// The stream is updated if a Message data is completly dumped
   Stream<String> get dumpedValue => _dumpedValue.stream;
+
   /// Returns the last dumped value
   String get lastDumpedValue => _lastDumpedValue;
+
   /// The stream returns the current state of the send process
   Stream<bool> get isSending => _isSending.stream;
+
   /// The stream returns the current chunk if there is a send process
   Stream<int> get chunkCount => _chunkCount.stream;
+
   /// The value returns the total count of chunks
   int get totalChunkCount => _totalChunkCount;
 
   sendingCallback(bool value) {
     _isSending.add(value);
   }
+
   chunkCountCallback(int value) {
     _chunkCount.add(value);
   }
+
   totalCountCallback(int value) {
     _totalChunkCount = value;
   }
+
   updateDumpedValue(String value) {
     _dumpedValue.add(value);
     _lastDumpedValue = value;
