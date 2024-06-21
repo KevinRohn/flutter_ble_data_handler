@@ -1,4 +1,11 @@
-# flutter_ble_data_handler
+# ❗ Maintainer Info
+
+> [!IMPORTANT]  
+> I've seen that the repo has been getting some attention lately.
+> Unfortunately I don't have the time to do an update on Flutter 3 for null-safety as well.
+> I would be happy if someone could do this. Gladly as a new maintainer or feel free to open a PR.
+
+## Description
 
 Flutter package which handles data packages to use with bluetooth low energy (BLE).
 It splitts data into chunks based on the MTU size. So you don't need to worry about 
